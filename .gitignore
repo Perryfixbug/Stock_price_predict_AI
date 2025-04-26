@@ -1,0 +1,6 @@
+#Không push myenv lên
+myenv/
+
+#Không push pycache lên
+__pycache__/
+
