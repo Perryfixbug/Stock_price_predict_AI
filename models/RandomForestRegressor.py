@@ -1,4 +1,4 @@
-from RegressionTreeNode import RegressionTreeNode
+from models.RegressionTreeNode import RegressionTreeNode
 import random
 
 class RandomForestRegressor:

@@ -4,3 +4,7 @@ myenv/
 #Không push pycache lên
 __pycache__/
 
+#Không push file config lên
+config.py
+
+test_predict.py

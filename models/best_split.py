@@ -1,4 +1,4 @@
-from mse import mse
+from models.mse import mse
 
 def best_split(X, y):
     n_samples, n_features = len(X), len(X[0])

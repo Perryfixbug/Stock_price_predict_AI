@@ -1,4 +1,4 @@
-from best_split import best_split
+from models.best_split import best_split
 
 class RegressionTreeNode:
     def __init__(self, depth=0, max_depth=5, min_samples_split=2):
