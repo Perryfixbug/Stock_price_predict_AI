@@ -1,43 +1,48 @@
-import yfinance as yf
+import streamlit as st
+from alpha_vantage.timeseries import TimeSeries
+import pandas as pd
+import time
+import config
 
-def get_stock_price(ticker_symbol: str):
-    ticker = yf.Ticker(ticker_symbol)
-    data = ticker.history(period='1d', interval='1m')
-    if data.empty:
-        return None
-    latest = data.iloc[-1]
-    return {
-        "price": round(latest['Close'], 2),
-        "time": latest.name.strftime("%H:%M:%S")
-    }
+ALPHA_VANTAGE_API_KEY = config.ALPHA_VANTAGE_API_KEY_2 
 
+@st.cache_data(ttl=600)
 def get_info_data(ticker_symbol: str = "AAPL"):
-    ticker = yf.Ticker(ticker_symbol)
-    info = ticker.info
-
-    # Tính sự thay đổi (change) dựa trên giá đóng cửa hiện tại và giá đóng cửa trước đó
-    previous_close = info.get("regularMarketPreviousClose", 0)
-    current_price = info.get("currentPrice", 0)
-
-    # Tính sự thay đổi theo phần trăm
-    if previous_close > 0:
-        change_percent = ((current_price - previous_close) / previous_close) * 100
-    else:
-        change_percent = 0
+    ts = TimeSeries(key=ALPHA_VANTAGE_API_KEY, output_format='json')
+    
+    # Lấy dữ liệu giá hiện tại
+    quote, _ = ts.get_quote_endpoint(symbol=ticker_symbol)
+    
+    try:
+        price = float(quote["05. price"])
+        prev_close = float(quote["08. previous close"])
+        change_percent = ((price - prev_close) / prev_close) * 100 if prev_close > 0 else 0
+    except:
+        price, prev_close, change_percent = 0, 0, 0
 
     return {
-        "name": info.get("longName", "N/A"),
+        "name": ticker_symbol,  # Alpha Vantage không cung cấp tên dài
         "symbol": ticker_symbol,
-        "price": round(current_price, 2),
+        "price": round(price, 2),
         "change": round(change_percent, 2),
-        "market_cap": info.get("marketCap", 0),
-        "pe_ratio": info.get("forwardPE", 0),
-        "dividend_yield": info.get("dividendYield", 0) * 100,
-        "time": info.get("regularMarketTime", 0),
+        "market_cap": 0,  # Không có trong Alpha Vantage free
+        "pe_ratio": 0,     # Không có trong Alpha Vantage free
+        "dividend_yield": 0,  # Không có trong Alpha Vantage free
+        "time": quote.get("07. latest trading day", "N/A")
     }
 
-def get_historical_data(ticker_symbol: str = 'AAPL', period: str = '1mo', interval: str = '1d'):
-    ticker = yf.Ticker(ticker_symbol)
-    data = ticker.history(period=period, interval=interval)
-    data = data.reset_index()
-    return data[['Date', 'Close', 'Open', 'High', 'Low', 'Volume']]  # hoặc thêm Volume, Open, v.v. nếu cần
+@st.cache_data(ttl=600)
+def get_all_historical_data(symbol):
+    ts = TimeSeries(key=ALPHA_VANTAGE_API_KEY, output_format='pandas')
+
+    def fetch(fn):
+        time.sleep(1)  # tránh giới hạn rate
+        df, _ = fn(symbol=symbol)
+        df = df.sort_index().reset_index()
+        return df
+
+    return {
+        "day": fetch(ts.get_daily),       # Dữ liệu hàng ngày (2 tháng gần nhất tương đương)
+        "week": fetch(ts.get_weekly),     # Dữ liệu hàng tuần
+        "month": fetch(ts.get_monthly)    # Dữ liệu hàng tháng
+    }

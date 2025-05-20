@@ -2,23 +2,43 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from services.stock_api import get_info_data, get_historical_data
-from models.full_code import RandomForestRegressor, RegressionTreeNode, best_split, mse
+# from models.full_code import RandomForestRegressor, RegressionTreeNode, best_split, mse
+from models.RandomForestRegressor import RandomForestRegressor
+from models.RegressionTreeNode import RegressionTreeNode
+from models.best_split import best_split
+from models.mse import mse
+
+from services.stock_api import get_info_data, get_all_historical_data
 import requests
 import pickle
 import config
-from services.chatbot_api import ask_openai
+from services.chatbot_api import generate_reply
 import openai
 
+
+
+# def predict(data, type='day'):   
+#     #Load models
+#     with open('models/models.pkl', 'rb') as f:
+#         models = pickle.load(f)
+#     # Predict using the appropriate model
+#     return models[type].predict(data)
+
+# data_day = get_all_historical_data('AAPL')['day']
+
+# print(data_day)
+# print(predict(data_day[['Open', 'High', 'Low', 'Close', 'Volume']].iloc[[-1]].values, 'day'))
+
 st.set_page_config(
-    page_title="InvestAI",
+    page_title="Trang chủ",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 
 #App Page
-st.header("InvestAI")
+st.title("InvestAI")
+st.caption("Hỗ trợ đầu tư chứng khoán bằng AI")
 col_left, col_right = st.columns([2, 1])
 
 #Left side
@@ -37,6 +57,7 @@ with col_left:
 
         with col2:
             search_button = st.button("Tìm kiếm", use_container_width=True)
+            
     # -- Company InfoCompany Info
     info = get_info_data(search_input)
     
@@ -51,18 +72,20 @@ with col_left:
     # -- Chart
     # 1. Chuẩn bị dữ liệu gốc
     # Lấy dữ liệu
-    data_day = get_historical_data(search_input, period='2mo', interval='1d')
-    data_week = get_historical_data(search_input, period='15mo', interval='1wk')
-    data_month = get_historical_data(search_input, period='5y', interval='1mo')
+    historical_data = get_all_historical_data(search_input)
+    data_day = historical_data["day"]
+    data_week = historical_data["week"]
+    data_month = historical_data["month"]
+    print(data_day)
 
     # 2. Vẽ Scatter ban đầu (mặc định là 1D)
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
-        x=data_day['Date'],
-        y=data_day['Close'],
+        x=data_day['date'],
+        y=data_day['close'],
         mode='lines+markers',
-        name='Close',
+        name='close',
         line=dict(color='blue'),
         hovertemplate='Giá: %{y}<br>Ngày: %{x}<extra></extra>'
     ))
@@ -74,17 +97,17 @@ with col_left:
                 active=0,
                 buttons=list([
                     dict(label="1D", method="update",
-                        args=[{"x": [data_day['Date']], "y": [data_day['Close']],
+                        args=[{"x": [data_day['date']], "y": [data_day['close']],
                                 "type": "scatter"},
                             {"title": "Biểu đồ Giá theo Ngày (2 tháng)"}]),
 
                     dict(label="1W", method="update",
-                        args=[{"x": [data_week['Date']], "y": [data_week['Close']],
+                        args=[{"x": [data_week['date']], "y": [data_week['close']],
                                 "type": "scatter"},
                             {"title": "Biểu đồ Giá theo Tuần (12 tháng)"}]),
 
                     dict(label="1M", method="update",
-                        args=[{"x": [data_month['Date']], "y": [data_month['Close']],
+                        args=[{"x": [data_month['date']], "y": [data_month['close']],
                                 "type": "scatter"},
                             {"title": "Biểu đồ Giá theo Tháng (5 năm)"}]),
                 ]),
@@ -145,9 +168,9 @@ with col_right:
         return models[type].predict(data)
     
     prediction = {
-        "day": round(predict([data_day[['Open', 'High', 'Low', 'Close', 'Volume']].iloc[-1]], type='day')[0], 2),
-        "week": round(predict([data_week[['Open', 'High', 'Low', 'Close', 'Volume']].iloc[-1]], type='week')[0],2),
-        "month": round(predict([data_month[['Open', 'High', 'Low', 'Close', 'Volume']].iloc[-1]], type='month')[0],2)
+        "day": round(predict(data_day[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='day')[0], 2),
+        "week": round(predict(data_week[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='week')[0],2),
+        "month": round(predict(data_month[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='month')[0],2)
     }
     change = {
         "day": round((prediction["day"] - info["price"]) / info["price"] * 100, 2),
@@ -175,7 +198,7 @@ with col_right:
     st.divider()
      # -- AI Suggestion
     with st.container():
-        st.subheader("InvestAI 🤖")
+        st.subheader("🤖InvestAI")
         
         # Khởi tạo lịch sử chat
         if "messages" not in st.session_state:
@@ -197,7 +220,7 @@ with col_right:
             st.session_state.messages.append({"role": "user", "content": user_input})
 
             # Lấy reply từ model
-            reply = ask_openai(user_input)
+            reply = generate_reply(user_input)
 
             # Hiển thị ngay reply
             with st.chat_message("assistant"):

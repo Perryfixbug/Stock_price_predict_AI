@@ -1,9 +1,39 @@
-# Stock_price_predict_AI
-Ứng dụng phân tích và dự đoán giá cổ phiếu sử dụng AI
 
-## Note:
-Ứng dụng có sử dụng API key của NewsAPI và OpenAI
+# Invest AI - Hỗ trợ đầu tư
 
-/config.py
-NEWS_API_KEY = keyAPI của bạn
-OPENAI_API_KEY = keyAPI của bạn
+Đây là trang web có tích hợp AI dự đoán giá cổ phiếu và chatbot hỗ trợ đầu tư
+
+
+
+
+## Installation
+
+Cài đặt và chạy venv
+
+```bash
+    pip -m venv myenv
+    myenv/Scripts/activate
+```
+Tải các thư viện cần thiết
+```bash
+    pip install -r requirements.txt
+```
+    
+## Appendix
+
+Dự án có sử dụng API key của Alpha Vantage, NewsAPI
+
+Tại file config.py
+```base
+    NEWS_API_KEY = "YOUR_API_KEY"
+    ALPHA_VANTAGE_API_KEY_2 = "YOUR_API_KEY"
+```
+
+## Deployment
+
+Chạy streamlit trong venv
+
+```bash
+  streamlit run Home.py
+```
+
