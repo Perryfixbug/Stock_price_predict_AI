@@ -1,7 +1,7 @@
 
 # Invest AI - Hỗ trợ đầu tư
 
-Đây là trang web có tích hợp AI dự đoán giá cổ phiếu và chatbot hỗ trợ đầu tư
+Dự án tạo trang web có tích hợp AI dự đoán giá cổ phiếu và chatbot hỗ trợ đầu tư
 
 
 
