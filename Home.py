@@ -2,32 +2,14 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-# from models.full_code import RandomForestRegressor, RegressionTreeNode, best_split, mse
-from models.RandomForestRegressor import RandomForestRegressor
-from models.RegressionTreeNode import RegressionTreeNode
-from models.best_split import best_split
-from models.mse import mse
-
+from models.full_code import RandomForestRegressor, RegressionTreeNode, best_split, mse
+from models.models_utils import load_model, predict
 from services.stock_api import get_info_data, get_all_historical_data
 import requests
-import pickle
 import config
-from services.chatbot_api import generate_reply
-import openai
+# from services.chatbot_api import generate_reply
 
-
-
-# def predict(data, type='day'):   
-#     #Load models
-#     with open('models/models.pkl', 'rb') as f:
-#         models = pickle.load(f)
-#     # Predict using the appropriate model
-#     return models[type].predict(data)
-
-# data_day = get_all_historical_data('AAPL')['day']
-
-# print(data_day)
-# print(predict(data_day[['Open', 'High', 'Low', 'Close', 'Volume']].iloc[[-1]].values, 'day'))
+model = load_model("models/models2.pkl")
 
 st.set_page_config(
     page_title="Trang chủ",
@@ -76,7 +58,6 @@ with col_left:
     data_day = historical_data["day"]
     data_week = historical_data["week"]
     data_month = historical_data["month"]
-    print(data_day)
 
     # 2. Vẽ Scatter ban đầu (mặc định là 1D)
     fig = go.Figure()
@@ -159,18 +140,10 @@ with col_left:
 
 #Right side
 with col_right:
-    def predict(data, type='day'):
-        # Load the model
-        with open('models/models.pkl', 'rb') as f:
-            models = pickle.load(f)
-        
-        # Predict using the appropriate model
-        return models[type].predict(data)
-    
     prediction = {
-        "day": round(predict(data_day[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='day')[0], 2),
-        "week": round(predict(data_week[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='week')[0],2),
-        "month": round(predict(data_month[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='month')[0],2)
+        "day": round(predict(model, data_day[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='day')[0], 2),
+        "week": round(predict(model, data_week[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='week')[0],2),
+        "month": round(predict(model, data_month[['open', 'high', 'low', 'close', 'volume']].iloc[[-1]].values, type='month')[0],2)
     }
     change = {
         "day": round((prediction["day"] - info["price"]) / info["price"] * 100, 2),
@@ -197,35 +170,35 @@ with col_right:
 
     st.divider()
      # -- AI Suggestion
-    with st.container():
-        st.subheader("🤖InvestAI")
+    # with st.container():
+    #     st.subheader("🤖InvestAI")
         
-        # Khởi tạo lịch sử chat
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
+    #     # Khởi tạo lịch sử chat
+    #     if "messages" not in st.session_state:
+    #         st.session_state.messages = []
 
-        # Hiển thị lịch sử CŨ
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+    #     # Hiển thị lịch sử CŨ
+    #     for msg in st.session_state.messages:
+    #         with st.chat_message(msg["role"]):
+    #             st.markdown(msg["content"])
 
-        # Người dùng nhập tin nhắn
-        user_input = st.chat_input("Nhập câu hỏi...")
+    #     # Người dùng nhập tin nhắn
+    #     user_input = st.chat_input("Nhập câu hỏi...")
 
-        if user_input:
-            # Hiển thị ngay tin nhắn người dùng
-            with st.chat_message("user"):
-                st.markdown(user_input)
-            # Lưu user message
-            st.session_state.messages.append({"role": "user", "content": user_input})
+    #     if user_input:
+    #         # Hiển thị ngay tin nhắn người dùng
+    #         with st.chat_message("user"):
+    #             st.markdown(user_input)
+    #         # Lưu user message
+    #         st.session_state.messages.append({"role": "user", "content": user_input})
 
-            # Lấy reply từ model
-            reply = generate_reply(user_input)
+    #         # Lấy reply từ model
+    #         reply = generate_reply(user_input)
 
-            # Hiển thị ngay reply
-            with st.chat_message("assistant"):
-                st.markdown(reply)
-            # Lưu assistant message
-            st.session_state.messages.append({"role": "assistant", "content": reply})
+    #         # Hiển thị ngay reply
+    #         with st.chat_message("assistant"):
+    #             st.markdown(reply)
+    #         # Lưu assistant message
+    #         st.session_state.messages.append({"role": "assistant", "content": reply})
 
     

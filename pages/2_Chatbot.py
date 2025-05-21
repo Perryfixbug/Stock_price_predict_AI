@@ -32,11 +32,11 @@ with st.form("chat_input", clear_on_submit=True):
 if submitted and user_input.strip():
     st.session_state.chat_history.append({"role": "user", "text": user_input})
     st.session_state.chat_history.append({"role": "ai", "text": "🤖 Đang suy nghĩ..."})
+    st.session_state.generating = True  # <-- cờ trạng thái
     st.rerun()
 
-# Sinh phản hồi nếu có "🤖 Đang suy nghĩ..."
-if st.session_state.chat_history and st.session_state.chat_history[-1]["text"] == "🤖 Đang suy nghĩ...":
-    # Ghép lịch sử hội thoại
+if st.session_state.get("generating", False):
+    # Ghép hội thoại và tạo phản hồi
     history_text = "\n".join(
         [f"User: {msg['text']}" if msg["role"] == "user" else f"Assistant: {msg['text']}"
          for msg in st.session_state.chat_history[:-1]]
@@ -44,6 +44,6 @@ if st.session_state.chat_history and st.session_state.chat_history[-1]["text"] =
     last_user_input = [msg["text"] for msg in reversed(st.session_state.chat_history) if msg["role"] == "user"][0]
     ai_response = generate_reply(last_user_input, history_text)
 
-    # Cập nhật lại phản hồi
     st.session_state.chat_history[-1]["text"] = ai_response
+    st.session_state.generating = False
     st.rerun()

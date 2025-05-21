@@ -39,6 +39,7 @@ def get_all_historical_data(symbol):
         time.sleep(1)  # tránh giới hạn rate
         df, _ = fn(symbol=symbol)
         df = df.sort_index().reset_index()
+        df.columns = ['date', 'open', 'high', 'low', 'close', 'volume']
         return df
 
     return {
